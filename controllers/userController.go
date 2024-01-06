@@ -20,7 +20,7 @@ func AllUsers(c *fiber.Ctx) error {
 
 	database.Database.Db.Preload("Role").Offset(offset).Limit(limit).Find(&users)
 	database.Database.Db.Model(&models.User{}).Count(&total)
-	result := database.Database.Db.Find(&users)
+	result := database.Database.Db.Preload("BankDetails").Preload("BankDetails.Bank").Find(&users)
 	if result.Error != nil {
 		return c.Status(500).JSON(fiber.Map{"error": result.Error.Error()})
 	}
@@ -66,7 +66,7 @@ func GetUser(c *fiber.Ctx) error {
 	}
 
 	var user models.User
-	if result := database.Database.Db.Preload("Role").First(&user, id); result.Error != nil {
+	if result := database.Database.Db.Where("id = ?", id).Preload("Role").Preload("BankDetails").First(&user); result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 		}
