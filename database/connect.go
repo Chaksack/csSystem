@@ -17,7 +17,9 @@ type DbInstance struct {
 var Database DbInstance
 
 func ConnectDb() {
-	db, err := gorm.Open(sqlite.Open("xactscore.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("xactscore.db"), &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
 
 	if err != nil {
 		log.Fatal("Failed to connect to the database! \n", err.Error())
@@ -37,10 +39,11 @@ func ConnectDb() {
 		&models.Role{},
 		&models.Permissions{},
 		&models.Bank{},
-		&models.BankUser{},
+		&models.UserBankDetails{},
 		&models.Momo{},
 	)
-	db.Model(&models.User{}).Association("Banks")
+	// db.Migrator().DropColumn(&models.BankUser{}, "bank") // temporary fix
+	// db.Model(&models.User{}).Association("Banks")
 
 	Database = DbInstance{Db: db}
 }

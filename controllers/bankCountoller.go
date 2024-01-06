@@ -42,8 +42,8 @@ func CreateBank(c *fiber.Ctx) error {
 }
 
 func CreateUserBank(c *fiber.Ctx) error {
-	var bank models.BankUser
-	if err := c.BodyParser(&bank); err != nil {
+	var bankUser models.UserBankDetails
+	if err := c.BodyParser(&bankUser); err != nil {
 		return err
 	}
 	userIDParam := c.Params("id")
@@ -51,21 +51,21 @@ func CreateUserBank(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid user ID"})
 	}
-	var existingUser models.User
-	if result := database.Database.Db.First(&existingUser, parsedUserID); result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Database error"})
-	}
-	bank.UserID = uint(parsedUserID)
-	if err := database.Database.Db.Create(&bank).Error; err != nil {
+	// var existingUser models.User
+	// if result := database.Database.Db.First(&existingUser, parsedUserID); result.Error != nil {
+	// 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	// 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+	// 	}
+	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Database error"})
+	// }
+	bankUser.UserID = uint(parsedUserID)
+	if err := database.Database.Db.Create(&bankUser).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error creating bank account"})
 	}
 	// if err := database.Database.Db.Model(&existingUser).Association("Bank").Append(&bank); err != nil {
 	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error associating bank with user"})
 	// }
-	return c.JSON(bank)
+	return c.JSON(bankUser)
 }
 func GetUserBankDetails(c *fiber.Ctx) error {
 	// Extract user ID from the request parameters
@@ -75,17 +75,25 @@ func GetUserBankDetails(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid user ID"})
 	}
 
-	// Fetch user details including associated banks
-	var user models.User
-	if result := database.Database.Db.Preload("BankUsers").Preload("BankUsers.Bank").First(&user, parsedUserID); result.Error != nil {
+	var userBankDetails []models.UserBankDetails
+	if result := database.Database.Db.Where("user_id = ?", parsedUserID).Preload("Bank").Find(&userBankDetails); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Bank not found"})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Database error"})
 	}
 
+	// Fetch user details including associated banks
+	// var user models.User
+	// if result := database.Database.Db.Where("id = ?", parsedUserID).Preload("BankUsers").First(&user); result.Error != nil {
+	// 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	// 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+	// 	}
+	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Database error"})
+	// }
+
 	// Return the user's bank details
-	return c.JSON(user.BankUsers)
+	return c.JSON(userBankDetails)
 }
 
 // func AllBanks(c *fiber.Ctx) error {

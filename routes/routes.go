@@ -97,7 +97,7 @@ func Setup(app *fiber.App) {
 	app.Get("api/users", controllers.AllUsers)
 	app.Post("api/users", controllers.CreateUser)
 	app.Get("api/users/:id", controllers.GetUser)
-	app.Post("api/userkyc/:id", controllers.AddUserKyc)
+	app.Post("api/userkyc/:id", controllers.AddUserKyc) // these are wrong in REST. Post should not have a path param
 	app.Post("api/usertin/:id", controllers.AddUserTin)
 	app.Put("api/users/:id", controllers.UpdateUser)
 	app.Delete("api/users/:id", controllers.DeleteUser)
